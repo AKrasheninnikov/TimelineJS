@@ -166,7 +166,7 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 						
 			getOEmbed: function(tweet, callback) {
 				
-				var the_url = "//api.twitter.com/1/statuses/oembed.json?id=" + tweet.mid + "&omit_script=true&include_entities=true&callback=?",
+				var the_url = "https://api.twitter.com/1/statuses/oembed.json?id=" + tweet.mid + "&omit_script=true&include_entities=true&callback=?",
 					twitter_timeout	= setTimeout(VMM.ExternalAPI.twitter.errorTimeOutOembed, VMM.master_config.timers.api, tweet);
 					//callback_timeout= setTimeout(callback, VMM.master_config.timers.api, tweet);
 				
@@ -210,7 +210,7 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 			
 			getHTML: function(id) {
 				//var the_url = document.location.protocol + "//api.twitter.com/1/statuses/oembed.json?id=" + id+ "&callback=?";
-				var the_url = "//api.twitter.com/1/statuses/oembed.json?id=" + id+ "&omit_script=true&include_entities=true&callback=?";
+				var the_url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id+ "&omit_script=true&include_entities=true&callback=?";
 				VMM.getJSON(the_url, VMM.ExternalAPI.twitter.onJSONLoaded);
 			},
 			
@@ -514,22 +514,32 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 					layer				=	google.maps.MapTypeId['TERRAIN'];
 				}
 				
-				
-				if (type.of(VMM.Util.getUrlVars(m.id)["ll"]) == "string") {
-					has_location			= true;
-					latlong					= VMM.Util.getUrlVars(m.id)["ll"].split(",");
-					location				= new google.maps.LatLng(parseFloat(latlong[0]),parseFloat(latlong[1]));
+				var new_google_url_regex = new RegExp(/@([0-9\.\-]+),([0-9\.\-]+),(\d+)z/);
+
+				if (m.id.match(new_google_url_regex)) {
+					var match = m.id.match(new_google_url_regex)
+					lat = parseFloat(match[1]);
+					lng = parseFloat(match[2]);
+					location = new google.maps.LatLng(lat,lng);
+					zoom = parseFloat(match[3]);
+					has_location = has_zoom = true;
+				} else {
+					if (type.of(VMM.Util.getUrlVars(m.id)["ll"]) == "string") {
+							has_location			= true;
+							latlong					= VMM.Util.getUrlVars(m.id)["ll"].split(",");
+							location				= new google.maps.LatLng(parseFloat(latlong[0]),parseFloat(latlong[1]));
+							
+						} else if (type.of(VMM.Util.getUrlVars(m.id)["sll"]) == "string") {
+							latlong					= VMM.Util.getUrlVars(m.id)["sll"].split(",");
+							location				= new google.maps.LatLng(parseFloat(latlong[0]),parseFloat(latlong[1]));
+						} 
+						
+						if (type.of(VMM.Util.getUrlVars(m.id)["z"]) == "string") {
+							has_zoom				=	true;
+							zoom					=	parseFloat(VMM.Util.getUrlVars(m.id)["z"]);
+						}
+				}				
 					
-				} else if (type.of(VMM.Util.getUrlVars(m.id)["sll"]) == "string") {
-					latlong					= VMM.Util.getUrlVars(m.id)["sll"].split(",");
-					location				= new google.maps.LatLng(parseFloat(latlong[0]),parseFloat(latlong[1]));
-				} 
-				
-				if (type.of(VMM.Util.getUrlVars(m.id)["z"]) == "string") {
-					has_zoom				=	true;
-					zoom					=	parseFloat(VMM.Util.getUrlVars(m.id)["z"]);
-				}
-				
 				map_options = {
 					zoom:						zoom,
 					draggable: 					false, 
@@ -888,35 +898,36 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 				}
 			},
 			
-			map_subdomains: ["", "a.", "b.", "c.", "d."],
+			map_subdomains: ["a", "b", "c", "d"],
 			
 			map_attribution: {
 				"stamen": 			"Map tiles by <a href='http://stamen.com'>Stamen Design</a>, under <a href='http://creativecommons.org/licenses/by/3.0'>CC BY 3.0</a>. Data by <a href='http://openstreetmap.org'>OpenStreetMap</a>, under <a href='http://creativecommons.org/licenses/by-sa/3.0'>CC BY SA</a>.",
-				"apple": 			"Map data &copy; 2012  Apple, Imagery &copy; 2012 Apple"
+				"apple": 			"Map data &copy; 2012  Apple, Imagery &copy; 2012 Apple",
+				"osm":				"&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
 			},
 									
 			map_providers: {
 				"toner": {
-					"url": 			"//{S}tile.stamen.com/toner/{Z}/{X}/{Y}.png",
+					"url": "https://stamen-tiles-{S}.a.ssl.fastly.net/toner/{Z}/{X}/{Y}.png",
 					"minZoom": 		0,
 					"maxZoom": 		20,
 					"attribution": 	"stamen"
 					
 				},
 				"toner-lines": {
-					"url": 			"//{S}tile.stamen.com/toner-lines/{Z}/{X}/{Y}.png",
+					"url": "https://stamen-tiles-{S}.a.ssl.fastly.net/toner-lines/{Z}/{X}/{Y}.png",
 					"minZoom": 		0,
 					"maxZoom": 		20,
 					"attribution": 	"stamen"
 				},
 				"toner-labels": {
-					"url": 			"//{S}tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png",
+					"url": "https://stamen-tiles-{S}.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}.png",
 					"minZoom": 		0,
 					"maxZoom": 		20,
 					"attribution": 	"stamen"
 				},
 				"sterrain": {
-					"url": 			"//{S}tile.stamen.com/terrain/{Z}/{X}/{Y}.jpg",
+					"url": "https://stamen-tiles-{S}.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}.jpg",
 					"minZoom": 		4,
 					"maxZoom": 		20,
 					"attribution": 	"stamen"
@@ -928,10 +939,16 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 					"attribution": 	"apple"
 				},
 				"watercolor": {
-					"url": 			"//{S}tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg",
+					"url": "https://stamen-tiles-{S}.a.ssl.fastly.net/watercolor/{Z}/{X}/{Y}.jpg",
 					"minZoom": 		3,
 					"maxZoom": 		16,
 					"attribution": 	"stamen"
+				},
+				"osm": {
+					"url": 			"//tile.openstreetmap.org/{z}/{x}/{y}.png",
+					"minZoom": 		3,
+					"maxZoom": 		18,
+					"attribution":		"osm"
 				}
 			}
 		},
@@ -1125,7 +1142,7 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 				} else {
 					api_key = Aes.Ctr.decrypt(VMM.master_config.api_keys_master.flickr, VMM.master_config.vp, 256)
 				}
-				var the_url = "//api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=" + api_key + "&photo_id=" + m.id + "&format=json&jsoncallback=?";
+				var the_url = "https://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=" + api_key + "&photo_id=" + m.id + "&format=json&jsoncallback=?";
 				
 				VMM.getJSON(the_url, function(d) {
 					var flickr_id = VMM.ExternalAPI.flickr.getFlickrIdFromUrl(d.sizes.size[0].url);
@@ -1252,7 +1269,7 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 			},
 			
 			create: function(m, callback) {
-				var the_url = "//soundcloud.com/oembed?url=" + m.id + "&format=js&callback=?";
+				var the_url = "//soundcloud.com/oembed?url=" + m.id + "&maxheight=168&format=js&callback=?";
 				VMM.getJSON(the_url, function(d) {
 					VMM.attachElement("#"+m.uid, d.html);
 					callback();
@@ -1417,12 +1434,12 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 					height: 				'390',
 					width: 					'640',
 					playerVars: {
-						enablejsapi:		1,
-						color: 				'white',
-						showinfo:			0,
-						theme:				'light',
-						start:				m.start,
-						rel:				0
+						enablejsapi: 1,
+						color: ("dark" == VMM.master_config.Timeline.youtubeTheme) ? "red" : "white", // https://developers.google.com/youtube/player_parameters#color
+						showinfo: 0,
+						theme: ("undefined" !== VMM.master_config.Timeline.youtubeTheme) ? VMM.master_config.Timeline.youtubeTheme : "light", // https://developers.google.com/youtube/player_parameters#theme
+						start: m.start,
+						rel: 0
 					},
 					videoId: m.id,
 					events: {
@@ -1460,23 +1477,26 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 			stopPlayers: function() {
 				for(var i = 0; i < VMM.master_config.youtube.array.length; i++) {
 					if (VMM.master_config.youtube.array[i].playing) {
-						var the_name = VMM.master_config.youtube.array[i].name;
-						VMM.master_config.youtube.array[i].player[the_name].stopVideo();
+						if (typeof VMM.master_config.youtube.array[i].player.the_name !== 'undefined') {
+							VMM.master_config.youtube.array[i].player.the_name.stopVideo();
+						}
 					}
 				}
 			},
-			
+			 
 			onStateChange: function(e) {
 				for(var i = 0; i < VMM.master_config.youtube.array.length; i++) {
-					var the_name = VMM.master_config.youtube.array[i].name;
-					if (VMM.master_config.youtube.array[i].player[the_name] == e.target) {
+					for (var z in VMM.master_config.youtube.array[i].player) {
+						if (VMM.master_config.youtube.array[i].player[z] == e.target) {
+							VMM.master_config.youtube.array[i].player.the_name = VMM.master_config.youtube.array[i].player[z];
+						}
+					}
+					if (VMM.master_config.youtube.array[i].player.the_name == e.target) {
 						if (e.data == YT.PlayerState.PLAYING) {
 							VMM.master_config.youtube.array[i].playing = true;
-							trace(VMM.master_config.youtube.array[i].hd)
-							if (VMM.master_config.youtube.array[i].hd) {
-								// SET TO HD
-								// DOESN'T WORK AS OF NOW
-								//VMM.master_config.youtube.array[i].player.setPlaybackQuality("hd720");
+							if (VMM.master_config.youtube.array[i].hd === false) {
+								VMM.master_config.youtube.array[i].hd = true;
+								VMM.master_config.youtube.array[i].player.the_name.setPlaybackQuality("hd720");
 							}
 						}
 					}
@@ -1546,7 +1566,7 @@ if(typeof VMM != 'undefined' && typeof VMM.ExternalAPI == 'undefined') {
 				
 				// VIDEO
 				// TODO: NEED TO ADD ASYNC SCRIPT TO TIMELINE FLOW
-				VMM.attachElement("#" + m.uid, "<iframe frameborder='0' width='100%' height='100%' src='" + video_url + "'></iframe><script async src='http://platform.vine.co/static/scripts/embed.js' charset='utf-8'></script>");
+				VMM.attachElement("#" + m.uid, "<iframe frameborder='0' width='100%' height='100%' src='" + video_url + "'></iframe><script async src='https://platform.vine.co/static/scripts/embed.js' charset='utf-8'></script>");
 				
 			},
 			
